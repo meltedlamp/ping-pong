@@ -24,7 +24,7 @@ ACE does the read with a delay. You do it by eye.
 You need **Python 3.8+**.
 
 ```bash
-git clone https://github.com/yugdogra0/ping-pong.git
+git clone https://github.com/meltedlamp/ping-pong.git
 cd ping-pong
 pip install -r requirements.txt
 python game.py
