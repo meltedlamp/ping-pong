@@ -3,6 +3,8 @@
 WIDTH, HEIGHT = 860, 940
 FPS = 60
 TITLE = "Ping Pong"
+# Title-screen Exit in the browser returns here. The desktop app still closes.
+ARCADE_URL = "https://meltedlamp.github.io/melted-arcade/"
 
 TABLE_X, TABLE_Y = 70, 128
 TABLE_W, TABLE_H = 720, 670

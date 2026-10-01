@@ -15,7 +15,7 @@ from .scores import load, save
 from .settings import (
     ACE, APRON, APRON_EDGE, BALL, BG, FAULT, FELT, FELT_DARK, FPS, GOLD, HEIGHT,
     LEVEL_ORDER, LEVELS, LINE, LINE_INSET, MUTED, PLAYER_SPEED, TABLE_H, TABLE_W,
-    TABLE_X, TABLE_Y, TEXT, TITLE, WHITE, WIDTH, YOU,
+    ARCADE_URL, TABLE_X, TABLE_Y, TEXT, TITLE, WHITE, WIDTH, YOU,
 )
 
 # Cursor travel before the mouse takes the paddle back from the keys.
@@ -89,8 +89,10 @@ class Game:
             )
             for _ in range(22)
         ]
-        self.play_rect = pygame.Rect(0, 0, 240, 62)
-        self.play_rect.center = (WIDTH // 2, 470)
+        self.play_rect = pygame.Rect(0, 0, 200, 62)
+        self.play_rect.center = (WIDTH // 2 - 116, 470)
+        self.exit_rect = pygame.Rect(0, 0, 200, 62)
+        self.exit_rect.center = (WIDTH // 2 + 116, 470)
         gap = 16
         card_w, card_h = 220, 108
         row = card_w * 3 + gap * 2
@@ -163,9 +165,13 @@ class Game:
                 pygame.quit()
 
     def _leave(self):
-        """Close the desktop window. In the browser, keep the page open."""
+        """Close the desktop window. In the browser, return to the arcade."""
         if sys.platform != "emscripten":
             self.running = False
+            return
+        import platform
+
+        platform.window.location.href = ARCADE_URL
 
     def frame(self, dt):
         self._events()
@@ -234,6 +240,9 @@ class Game:
                     return True
             if self.play_rect.collidepoint(self.mouse):
                 self.start_match()
+                return True
+            if self.exit_rect.collidepoint(self.mouse):
+                self._leave()
                 return True
         elif self.state == "pause":
             if self.resume_rect.collidepoint(self.mouse):
@@ -557,6 +566,7 @@ class Game:
         blurb = LEVELS[self.level]["blurb"]
         self._centered(self.small, blurb, TEXT, 372, WIDTH - 120)
         self._button(self.play_rect, "PLAY", primary=True)
+        self._button(self.exit_rect, "EXIT")
         wins = self.small.render(f"Wins  {self.stats['wins']}", True, GOLD)
         best = self.small.render(f"Best rally  {self.stats['rally']}", True, MUTED)
         self.screen.blit(wins, wins.get_rect(midtop=(WIDTH // 2 - 90, 560)))
