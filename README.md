@@ -4,20 +4,24 @@ A small table-tennis game written in Python with [Pygame](https://www.pygame.org
 You play the near side. An agent named ACE plays the far side, reads the bounce,
 and tries to get there before you do.
 
-The ball leaves your paddle, has to clear the net, and has to land on the far half.
+The ball leaves your paddle, arcs over the net, and has to land on the far half.
 Its shadow runs in a straight line across the felt. That shadow is the read.
 ACE does the read with a delay. You do it by eye.
+
+Play it in the browser: [https://meltedlamp.github.io/ping-pong/](https://meltedlamp.github.io/ping-pong/)
+
+That link opens the title screen. Wins and the best rally are saved in the browser.
 
 ## Features
 
 - **You against ACE.** The line under ACE's name is what it is thinking: an early read, a correction at the net, a stretch, or that your shot is going out.
 - **Three agents**, picked on the title screen. **Warmup** chases the ball late. **Match** reads the bounce, then adjusts. **Agent** calls the landing early, so you have to pull it wide before a winner will land.
-- **A real flight.** Shots arc. A drive has to clear the net. The white ball floats above a dark shadow, and the two meet when it bounces.
+- **A real flight.** Shots arc over the net. The white ball floats above a dark shadow, and the two meet when it bounces.
 - **Aim with the paddle.** Stand to one side to shape your serve. In a rally, meet the ball with the edge of the paddle to send it wide. You can lunge past the sideline to redirect a wide ball back across the table.
-- **Pace.** Each clean hit comes back faster. A gentle block keeps the rally going. A change of direction, once the pace is up, is how you score.
+- **Pace.** Each clean hit comes back faster. A change of direction, once the pace is up, is how you score.
 - **First to 11, win by 2.** Serve changes every two points, and every point once both sides reach 10.
-- **Wins and best rally** are saved on this computer.
-- **No asset files.** The table, the ball, and the sounds are drawn and synthesized in code. Press `M` to mute.
+- **Wins and best rally** are saved on this computer, or in the browser on the web page.
+- **Drawn in code.** The table, the ball, and the sounds are generated in code. Press `M` to mute. The browser page includes a font, because it has no Segoe UI.
 
 ## Getting started
 
@@ -40,7 +44,7 @@ python game.py
 | Start / play again | Click **Play** or **Again** (or press `Enter` or `Space`) |
 | Pause | `Esc`, then **Resume** or **Title** |
 | Mute / unmute | `M` |
-| Quit | `Esc` on the title screen |
+| Quit | `Esc` on the title screen (the browser page stays open) |
 
 ## How to play
 
@@ -73,12 +77,14 @@ How hard ACE plays is the `LEVELS` table in that same file: reaction time, move 
 ```
 ping-pong/
 ├── game.py              # launcher: python game.py
+├── main.py              # browser entry: python main.py
 ├── pingpong/            # the game package (also runs with: python -m pingpong)
 │   ├── game.py          # window, table, menus
 │   ├── rally.py         # ball, paddles, and ACE
 │   ├── audio.py         # synthesized hits and scores
 │   ├── scores.py        # wins and best rally saved on this computer
-│   └── settings.py      # window size, colours, and tuning knobs
+│   ├── settings.py      # window size, colours, and tuning knobs
+│   └── fonts/           # Nunito, used by the browser build
 ├── requirements.txt     # pygame dependency
 └── README.md
 ```

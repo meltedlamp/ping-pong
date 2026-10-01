@@ -10,8 +10,18 @@ RATE = 44100
 
 
 def _sound(samples, volume):
-    buf = array("h", (max(-32767, min(32767, int(s * volume * 32767))) for s in samples))
-    return pygame.mixer.Sound(buffer=buf)
+    clipped = [max(-32767, min(32767, int(s * volume * 32767))) for s in samples]
+    # Windows opens the mixer in stereo even when mono was requested. A mono
+    # buffer is then read as left/right pairs, which plays every sound an octave high.
+    channels = 1
+    init = pygame.mixer.get_init()
+    if init is not None:
+        channels = init[2]
+    if channels == 2:
+        buf = array("h", (sample for sample in clipped for _ in (0, 1)))
+    else:
+        buf = array("h", clipped)
+    return pygame.mixer.Sound(buffer=buf.tobytes())
 
 
 def _tone(freq, duration, volume, decay):

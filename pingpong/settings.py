@@ -14,9 +14,9 @@ BALL_R = 9
 
 # A shot leaves the paddle, clears the net, and bounces on the far half.
 GRAVITY = 900.0
-RESTITUTION = 0.74
-BOUNCE_FRAC = 0.82
-HIT_Z = 22.0
+RESTITUTION = 0.56
+BOUNCE_FRAC = 0.93
+HIT_Z = 12.0
 NET_H = 26.0
 STRIKE_Z = 80.0
 FLIGHT_SLOW = 0.90

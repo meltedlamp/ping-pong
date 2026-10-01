@@ -1,7 +1,10 @@
 """Match loop, table, and menus."""
 
+import asyncio
 import math
 import random
+import sys
+from pathlib import Path
 
 import pygame
 
@@ -14,9 +17,21 @@ from .settings import (
     TABLE_X, TABLE_Y, TEXT, TITLE, WHITE, WIDTH, YOU,
 )
 
+# Cursor travel before the mouse takes the paddle back from the keys.
+MOUSE_GRAB = 12
+
 
 def _bounds():
     return (TABLE_X, TABLE_Y, TABLE_X + TABLE_W, TABLE_Y + TABLE_H)
+
+
+def load_font(size, bold=False):
+    """Segoe UI on the desktop. The browser has no Segoe, so it uses the bundled Nunito."""
+    if sys.platform == "emscripten":
+        filename = "Nunito-Bold.ttf" if bold else "Nunito-Regular.ttf"
+        path = Path(__file__).resolve().parent / "fonts" / filename
+        return pygame.font.Font(str(path), size)
+    return pygame.font.SysFont("segoeui", size, bold=bold)
 
 
 class Spark:
@@ -48,12 +63,12 @@ class Game:
         pygame.display.set_caption(TITLE)
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         self.clock = pygame.time.Clock()
-        self.font = pygame.font.SysFont("segoeui", 28)
-        self.small = pygame.font.SysFont("segoeui", 18)
-        self.tiny = pygame.font.SysFont("segoeui", 15)
-        self.big = pygame.font.SysFont("segoeui", 68, bold=True)
-        self.score_font = pygame.font.SysFont("segoeui", 54, bold=True)
-        self.button_font = pygame.font.SysFont("segoeui", 24, bold=True)
+        self.font = load_font(28)
+        self.small = load_font(18)
+        self.tiny = load_font(15)
+        self.big = load_font(68, bold=True)
+        self.score_font = load_font(54, bold=True)
+        self.button_font = load_font(24, bold=True)
         self.audio = Audio()
         self.stats = load()
         self.audio.muted = self.stats["muted"]
@@ -92,6 +107,8 @@ class Game:
         self.pause_menu_rect = pygame.Rect(0, 0, 210, 54)
         self.pause_menu_rect.center = (WIDTH // 2, 568)
         self.mouse = (WIDTH // 2, HEIGHT // 2)
+        self.aim_x = float(WIDTH // 2)
+        self.mouse_anchor = self.mouse
         self.using_mouse = True
         self.clicked = False
         self.serve_down = False
@@ -107,12 +124,32 @@ class Game:
         self.seen_point = False
         pygame.mouse.set_visible(True)
 
-    def run(self):
-        while self.running:
-            dt = self.clock.tick(FPS) / 1000
-            self.frame(dt)
-        pygame.mouse.set_visible(True)
-        pygame.quit()
+    async def run(self):
+        if sys.platform == "emscripten":
+            self._draw()
+            pygame.display.flip()
+            await asyncio.sleep(0)
+            # The mixer opened before the browser audio device was ready, so open it again.
+            try:
+                pygame.mixer.quit()
+            except pygame.error:
+                pass
+            self.audio = Audio()
+            self.audio.muted = self.stats["muted"]
+        try:
+            while self.running:
+                dt = self.clock.tick(FPS) / 1000
+                self.frame(dt)
+                await asyncio.sleep(0)
+        finally:
+            pygame.mouse.set_visible(True)
+            if sys.platform != "emscripten":
+                pygame.quit()
+
+    def _leave(self):
+        """Close the desktop window. In the browser, keep the page open."""
+        if sys.platform != "emscripten":
+            self.running = False
 
     def frame(self, dt):
         self._events()
@@ -126,14 +163,14 @@ class Game:
         self.ui_used = False
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                self.running = False
+                self._leave()
             elif event.type == pygame.MOUSEMOTION:
                 self.mouse = event.pos
-                self.using_mouse = True
+                if self.state == "play":
+                    self._grab_mouse(event.pos)
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 self.mouse = event.pos
                 self.clicked = True
-                self.using_mouse = True
             elif event.type == pygame.KEYDOWN:
                 self._key(event.key)
         if self.clicked:
@@ -149,7 +186,7 @@ class Game:
             return
         if key == pygame.K_ESCAPE:
             if self.state == "start":
-                self.running = False
+                self._leave()
             elif self.state == "play":
                 self.state = "pause"
                 pygame.mouse.set_visible(True)
@@ -198,8 +235,27 @@ class Game:
                 return True
         return False
 
+    def _grab_mouse(self, pos):
+        if self.using_mouse:
+            self.aim_x = pos[0]
+            return
+        ax, ay = self.mouse_anchor
+        if (pos[0] - ax) ** 2 + (pos[1] - ay) ** 2 >= MOUSE_GRAB * MOUSE_GRAB:
+            self.using_mouse = True
+            self.aim_x = pos[0]
+
     def _resume(self):
         self.state = "play"
+        if self.using_mouse and self.rally is not None:
+            x = int(self.rally.player.cx)
+            y = int(self.mouse[1])
+            try:
+                pygame.mouse.set_pos((x, y))
+            except pygame.error:
+                pass
+            self.mouse = (x, y)
+            self.aim_x = float(x)
+        self.mouse_anchor = self.mouse
         pygame.mouse.set_visible(False)
 
     def _to_title(self):
@@ -212,6 +268,9 @@ class Game:
         self.sparks = []
         self.shake = 0.0
         self.seen_point = False
+        self.aim_x = float(self.mouse[0])
+        self.mouse_anchor = self.mouse
+        self.using_mouse = True
         self.state = "play"
         self.stats["level"] = self.level
         self._store()
@@ -227,9 +286,10 @@ class Game:
             direction += 1
         if direction:
             self.using_mouse = False
+            self.mouse_anchor = self.mouse
             return cx + direction * PLAYER_SPEED * dt
         if self.using_mouse:
-            return self.mouse[0]
+            return self.aim_x
         return cx
 
     def _update(self, dt):
@@ -589,5 +649,5 @@ class Game:
             y += font.get_linesize()
 
 
-def main():
-    Game().run()
+async def main():
+    await Game().run()

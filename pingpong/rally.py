@@ -279,7 +279,11 @@ class Rally:
         return y > self.net_y + 6
 
     def _aim(self, player_x, margin, error, mixup):
-        side = 1.0 if player_x < self.cx else -1.0
+        # Standing on the center line used to break the tie toward one side.
+        if abs(player_x - self.cx) <= 1.0:
+            side = 1.0 if self.agent.rng.random() < 0.5 else -1.0
+        else:
+            side = 1.0 if player_x < self.cx else -1.0
         if self.agent.rng.random() < mixup:
             side *= -1
         reach = max(40.0, self.half - margin)
@@ -432,12 +436,20 @@ class Rally:
             if agent.timer <= 0:
                 agent.timer = agent.reaction
                 agent.committed = True
-                far = self.ball.y > self.net_y
-                err = agent.error_far if far else agent.error_near
-                agent.target = self.ball.x + agent.rng.uniform(-err, err)
-            speed = agent.speed if agent.committed else agent.drift
-            if not agent.committed:
+                if self._going_out():
+                    agent.leaving = True
+                else:
+                    agent.leaving = False
+                    far = self.ball.y > self.net_y
+                    err = agent.error_far if far else agent.error_near
+                    agent.target = self.ball.x + agent.rng.uniform(-err, err)
+            if agent.leaving:
                 agent.target = self.cx
+                speed = agent.drift
+            else:
+                speed = agent.speed if agent.committed else agent.drift
+                if not agent.committed:
+                    agent.target = self.cx
         else:
             if not agent.committed:
                 agent.target = self.cx
