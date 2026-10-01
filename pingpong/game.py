@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 import pygame
+import pygame.mixer
 
 from .audio import Audio
 from .rally import Rally
@@ -57,7 +58,7 @@ class Game:
     def __init__(self):
         try:
             pygame.mixer.pre_init(44100, -16, 1, 512)
-        except pygame.error:
+        except Exception:
             pass
         pygame.init()
         pygame.display.set_caption(TITLE)
@@ -132,7 +133,7 @@ class Game:
             # The mixer opened before the browser audio device was ready, so open it again.
             try:
                 pygame.mixer.quit()
-            except pygame.error:
+            except Exception:
                 pass
             self.audio = Audio()
             self.audio.muted = self.stats["muted"]
@@ -251,7 +252,7 @@ class Game:
             y = int(self.mouse[1])
             try:
                 pygame.mouse.set_pos((x, y))
-            except pygame.error:
+            except Exception:
                 pass
             self.mouse = (x, y)
             self.aim_x = float(x)

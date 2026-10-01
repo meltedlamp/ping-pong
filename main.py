@@ -2,6 +2,8 @@
 
 import asyncio
 
+import pygame.mixer
+
 from pingpong.game import main
 
 asyncio.run(main())

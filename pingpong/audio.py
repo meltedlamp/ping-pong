@@ -5,6 +5,7 @@ import random
 from array import array
 
 import pygame
+import pygame.mixer
 
 RATE = 44100
 
@@ -65,22 +66,23 @@ class Audio:
     def __init__(self):
         self.muted = False
         self.ok = False
+        self.sounds = {}
         try:
             if pygame.mixer.get_init() is None:
                 pygame.mixer.init(RATE, -16, 1, 512)
+            self.sounds = {
+                "hit_you": _tone(640, 0.06, 0.35, 28),
+                "hit_ace": _tone(420, 0.07, 0.32, 24),
+                "bounce": _tone(180, 0.05, 0.28, 36),
+                "serve": _noise(0.05, 0.22, 28, 3),
+                "net": _noise(0.09, 0.4, 18, 9),
+                "out": _tone(140, 0.12, 0.3, 14),
+                "score_you": _pair(523.25, 783.99, 0.34),
+                "score_ace": _pair(392.0, 261.63, 0.32),
+            }
             self.ok = True
-        except pygame.error:
-            return
-        self.sounds = {
-            "hit_you": _tone(640, 0.06, 0.35, 28),
-            "hit_ace": _tone(420, 0.07, 0.32, 24),
-            "bounce": _tone(180, 0.05, 0.28, 36),
-            "serve": _noise(0.05, 0.22, 28, 3),
-            "net": _noise(0.09, 0.4, 18, 9),
-            "out": _tone(140, 0.12, 0.3, 14),
-            "score_you": _pair(523.25, 783.99, 0.34),
-            "score_ace": _pair(392.0, 261.63, 0.32),
-        }
+        except Exception:
+            self.ok = False
 
     def play(self, name):
         if not self.ok or self.muted:
