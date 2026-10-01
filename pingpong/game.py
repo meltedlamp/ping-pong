@@ -125,11 +125,26 @@ class Game:
         self.seen_point = False
         pygame.mouse.set_visible(True)
 
+    def _fit_page(self):
+        """Keep the table's shape when the browser fits the canvas to the window."""
+        if sys.platform != "emscripten":
+            return
+        try:
+            from platform import window
+
+            canvas = window.canvas
+            canvas.style.width = f"min(100vw, calc(100vh * {WIDTH} / {HEIGHT}))"
+            canvas.style.height = f"min(100vh, calc(100vw * {HEIGHT} / {WIDTH}))"
+        except Exception:
+            pass
+
     async def run(self):
         if sys.platform == "emscripten":
+            self._fit_page()
             self._draw()
             pygame.display.flip()
             await asyncio.sleep(0)
+            self._fit_page()
             # The mixer opened before the browser audio device was ready, so open it again.
             try:
                 pygame.mixer.quit()
