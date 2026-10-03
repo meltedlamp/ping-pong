@@ -59,6 +59,38 @@ def _format(stats):
     ))
 
 
+def note_arcade(game, score, note=""):
+    """Leave this run for Melted Arcade, on the name signed in there."""
+    if sys.platform != "emscripten":
+        return
+    try:
+        import json
+        import time
+
+        storage = _web_storage()
+        player = str(storage.getItem("melted-arcade-player") or "").strip()
+        score = max(0, int(score))
+        if not player or score <= 0:
+            return
+        raw = storage.getItem("melted-arcade-slips") or "[]"
+        try:
+            slips = json.loads(str(raw))
+        except ValueError:
+            slips = []
+        if not isinstance(slips, list):
+            slips = []
+        slips.append({
+            "game": str(game),
+            "score": score,
+            "player": player,
+            "note": "win" if note == "win" else "",
+            "at": int(time.time() * 1000),
+        })
+        storage.setItem("melted-arcade-slips", json.dumps(slips[-40:]))
+    except Exception:
+        return
+
+
 def _web_storage():
     from platform import window
 

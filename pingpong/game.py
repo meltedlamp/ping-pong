@@ -11,7 +11,7 @@ import pygame.mixer
 
 from .audio import Audio
 from .rally import Rally
-from .scores import load, save
+from .scores import load, note_arcade, save
 from .settings import (
     ACE, APRON, APRON_EDGE, BALL, BG, FAULT, FELT, FELT_DARK, FPS, GOLD, HEIGHT,
     LEVEL_ORDER, LEVELS, LINE, LINE_INSET, MUTED, PLAYER_SPEED, TABLE_H, TABLE_W,
@@ -339,6 +339,8 @@ class Game:
         if self.rally.phase == "match":
             self.state = "over"
             pygame.mouse.set_visible(True)
+            note = "win" if self.rally.you > self.rally.ace else ""
+            note_arcade("pong", self.rally.live_best(), note)
 
     def _react(self, events):
         for event in events:
